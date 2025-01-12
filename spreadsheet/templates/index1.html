@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enhanced Google Sheets Mimic</title>
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      .top-bar {
+        background-color: #f8f9fa;
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+      }
+      .container-fluid {
+        padding: 0;
+      }
+      .toolbar {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        background-color: #f8f9fa;
+      }
+      .toolbar-group {
+        display: flex;
+        gap: 2px;
+        border-right: 1px solid #ddd;
+        padding-right: 8px;
+        margin-right: 8px;
+      }
+      .formula-bar {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background-color: white;
+      }
+      .formula-label {
+        font-size: 13px;
+        color: #666;
+        width: 30px;
+        text-align: center;
+      }
+      .formula-input {
+        flex-grow: 1;
+        padding: 4px 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: monospace;
+      }
+      .sheet-container {
+        overflow: auto;
+        height: calc(100vh - 130px);
+      }
+      .sheet-table {
+        border-collapse: collapse;
+        min-width: 100%;
+        background-color: white;
+      }
+      .sheet-table th,
+      .sheet-table td {
+        border: 1px solid #ddd;
+        padding: 4px 8px;
+        min-width: 80px;
+        position: relative;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .sheet-table th {
+        background-color: #f8f9fa;
+        font-weight: normal;
+        user-select: none;
+      }
+      .cell {
+        outline: none;
+        min-height: 23px;
+      }
+      .cell.selected {
+        border: 2px solid #1a73e8;
+        background-color: #e8f0fe;
+      }
+      .resize-handle {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        cursor: col-resize;
+        background-color: transparent;
+      }
+      .resize-handle:hover {
+        background-color: #1a73e8;
+      }
+      .context-menu {
+        position: fixed;
+        background: white;
+        border: 1px solid #ddd;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+      }
+      .context-menu ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .context-menu li {
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+      .context-menu li:hover {
+        background-color: #f0f0f0;
+      }
+      .color-picker {
+        display: none;
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        padding: 5px;
+        z-index: 1000;
+      }
+      .font-size-picker {
+        width: 60px;
+      }
+      .function-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-grow: 1;
+      }
+      .function-select {
+        width: 120px;
+      }
+      .result-preview {
+        font-size: 12px;
+        color: #666;
+        margin-left: 8px;
+        min-width: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container-fluid">
+      <div class="top-bar">
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Untitled spreadsheet"
+          style="width: 200px"
+        />
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <button class="btn btn-sm btn-light" id="save">
+            <i class="fas fa-save"></i>
+          </button>
+          <button class="btn btn-sm btn-light" id="load">
+            <i class="fas fa-folder-open"></i>
+          </button>
+        </div>
+
+        <div class="toolbar-group">
+          <select class="form-control form-control-sm font-size-picker">
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12" selected>12</option>
+            <option value="14">14</option>
+            <option value="16">16</option>
+          </select>
+
+          <button class="btn btn-sm btn-light" id="bold">
+            <i class="fas fa-bold"></i>
+          </button>
+          <button class="btn btn-sm btn-light" id="italic">
+            <i class="fas fa-italic"></i>
+          </button>
+          <button class="btn btn-sm btn-light" id="underline">
+            <i class="fas fa-underline"></i>
+          </button>
+          <button class="btn btn-sm btn-light" id="color">
+            <i class="fas fa-font"></i>
+          </button>
+          <button class="btn btn-sm btn-light" id="bg-color">
+            <i class="fas fa-fill-drip"></i>
+          </button>
+        </div>
+
+        <div class="toolbar-group">
+          <button class="btn btn-sm btn-light" id="add-row">
+            <i class="fas fa-plus"></i> Row
+          </button>
+          <button class="btn btn-sm btn-light" id="remove-row">
+            <i class="fas fa-minus"></i> Row
+          </button>
+          <button class="btn btn-sm btn-light" id="add-column">
+            <i class="fas fa-plus"></i> Column
+          </button>
+          <button class="btn btn-sm btn-light" id="remove-column">
+            <i class="fas fa-minus"></i> Column
+          </button>
+        </div>
+      </div>
+
+      <div class="formula-bar">
+        <div class="formula-label">fx</div>
+        <div class="function-group">
+          <select
+            class="form-control form-control-sm function-select"
+            id="function-select"
+          >
+            <option value="">Select Function</option>
+            <optgroup label="Math Functions">
+              <option value="SUM">SUM</option>
+              <option value="AVERAGE">AVERAGE</option>
+              <option value="MAX">MAX</option>
+              <option value="MIN">MIN</option>
+              <option value="COUNT">COUNT</option>
+            </optgroup>
+            <optgroup label="Data Functions">
+              <option value="TRIM">TRIM</option>
+              <option value="UPPER">UPPER</option>
+              <option value="LOWER">LOWER</option>
+              <option value="REMOVE_DUPLICATES">REMOVE_DUPLICATES</option>
+            </optgroup>
+          </select>
+          <input
+            type="text"
+            class="formula-input"
+            id="formula-bar"
+            placeholder="Enter cell range (e.g., A1:A5)"
+          />
+          <span class="result-preview" id="result-preview"></span>
+        </div>
+      </div>
+
+      <div class="sheet-container">
+        <table class="sheet-table" id="spreadsheet">
+          <thead>
+            <tr id="header-row">
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="context-menu" style="display: none">
+      <ul>
+        <li data-action="cut"><i class="fas fa-cut"></i> Cut</li>
+        <li data-action="copy"><i class="fas fa-copy"></i> Copy</li>
+        <li data-action="paste"><i class="fas fa-paste"></i> Paste</li>
+        <li data-action="delete"><i class="fas fa-trash"></i> Delete</li>
+        <li data-action="insert-row-above">
+          <i class="fas fa-plus"></i> Insert row above
+        </li>
+        <li data-action="insert-row-below">
+          <i class="fas fa-plus"></i> Insert row below
+        </li>
+        <li data-action="insert-column-left">
+          <i class="fas fa-plus"></i> Insert column left
+        </li>
+        <li data-action="insert-column-right">
+          <i class="fas fa-plus"></i> Insert column right
+        </li>
+      </ul>
+    </div>
+
+    <div class="color-picker">
+      <input type="color" id="color-picker-input" />
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        const spreadsheet = $("#spreadsheet");
+        const formulaBar = $("#formula-bar");
+        const contextMenu = $(".context-menu");
+        const colorPicker = $(".color-picker");
+        const localStorageKey = "googleSheetsMimicData";
+
+        // Initialize spreadsheet data
+        let data = {};
+        let selectedCells = [];
+        let clipboard = null;
+        let isResizing = false;
+        let startX;
+        let startWidth;
+
+        // Mathematical Functions
+        const mathFunctions = {
+          SUM: (range) => {
+            const values = range.map((cell) => parseFloat(cell) || 0);
+            const result = values.reduce((sum, val) => sum + val, 0);
+            return {
+              result,
+              explanation: `Sum of ${values.join(" + ")} = ${result}`,
+            };
+          },
+          AVERAGE: (range) => {
+            const values = range.map((cell) => parseFloat(cell) || 0);
+            const sum = values.reduce((acc, val) => acc + val, 0);
+            const result = sum / values.length;
+            return {
+              result: result.toFixed(2),
+              explanation: `Average of ${values.join(", ")} = ${result.toFixed(
+                2
+              )}`,
+            };
+          },
+          MAX: (range) => {
+            const values = range.map((cell) => parseFloat(cell) || 0);
+            const result = Math.max(...values);
+            return {
+              result,
+              explanation: `Maximum value among ${values.join(
+                ", "
+              )} = ${result}`,
+            };
+          },
+          MIN: (range) => {
+            const values = range.map((cell) => parseFloat(cell) || 0);
+            const result = Math.min(...values);
+            return {
+              result,
+              explanation: `Minimum value among ${values.join(
+                ", "
+              )} = ${result}`,
+            };
+          },
+          COUNT: (range) => {
+            const values = range.filter((cell) => !isNaN(parseFloat(cell)));
+            return {
+              result: values.length,
+              explanation: `Count of numeric values = ${values.length}`,
+            };
+          },
+        };
+
+        // Data Quality Functions
+        const dataFunctions = {
+          TRIM: (range) => {
+            const results = range.map((cell) => cell.toString().trim());
+            return {
+              result: results[0],
+              explanation: `Trimmed values: ${results.join(", ")}`,
+            };
+          },
+          UPPER: (range) => {
+            const results = range.map((cell) => cell.toString().toUpperCase());
+            return {
+              result: results[0],
+              explanation: `Uppercase values: ${results.join(", ")}`,
+            };
+          },
+          LOWER: (range) => {
+            const results = range.map((cell) => cell.toString().toLowerCase());
+            return {
+              result: results[0],
+              explanation: `Lowercase values: ${results.join(", ")}`,
+            };
+          },
+          REMOVE_DUPLICATES: (range) => {
+            const unique = [...new Set(range)];
+            return {
+              result: unique.join(", "),
+              explanation: `Unique values: ${unique.join(", ")}`,
+            };
+          },
+        };
+
+        // Cell Selection
+        spreadsheet.on("mousedown", ".cell", function (e) {
+          const cell = $(this);
+          if (!e.shiftKey) {
+            $(".cell.selected").removeClass("selected");
+            selectedCells = [];
+          }
+          cell.addClass("selected");
+          selectedCells.push(cell);
+
+          const cellId = cell.data("id");
+          formulaBar.val(data[cellId]?.formula || cell.text());
+        });
+
+        // Function Dropdown Handler
+        $("#function-select").on("change", function () {
+          const selectedFunction = $(this).val();
+          if (selectedFunction) {
+            formulaBar.val("");
+            formulaBar.attr(
+              "placeholder",
+              `Enter range for ${selectedFunction} (e.g., A1:A5)`
+            );
+          }
+        });
+
+        // Formula Bar Handler
+        formulaBar.on("input", function () {
+          const range = $(this).val();
+          const selectedFunction = $("#function-select").val();
+
+          if (selectedFunction && range) {
+            try {
+              const values = getCellRange(range);
+              const func =
+                mathFunctions[selectedFunction] ||
+                dataFunctions[selectedFunction];
+              if (func) {
+                const { result, explanation } = func(values);
+                $("#result-preview").text(explanation);
+              }
+            } catch (error) {
+              $("#result-preview").text("Invalid range");
+            }
+          }
+        });
+
+        // Get Cell Range
+        function getCellRange(range) {
+          const [start, end] = range.split(":");
+          if (!end) {
+            const cellValue =
+              data[start]?.value || $(`[data-id="${start}"]`).text();
+            return [cellValue];
+          }
+
+          const startCol = start.match(/[A-Z]+/)[0];
+          const startRow = parseInt(start.match(/\d+/)[0]);
+          const endCol = end.match(/[A-Z]+/)[0];
+          const endRow = parseInt(end.match(/\d+/)[0]);
+
+          const values = [];
+          for (
+            let col = startCol.charCodeAt(0);
+            col <= endCol.charCodeAt(0);
+            col++
+          ) {
+            for (let row = startRow; row <= endRow; row++) {
+              const cellId = `${String.fromCharCode(col)}${row}`;
+              const cellValue =
+                data[cellId]?.value || $(`[data-id="${cellId}"]`).text();
+              values.push(cellValue);
+            }
+          }
+          return values;
+        }
+
+        // Apply Formula
+        function applyFormula(cellId, range) {
+          try {
+            const selectedFunction = $("#function-select").val();
+            if (!selectedFunction) return;
+
+            const values = getCellRange(range);
+            const func =
+              mathFunctions[selectedFunction] ||
+              dataFunctions[selectedFunction];
+
+            if (func) {
+              const { result, explanation } = func(values);
+              const formula = `=${selectedFunction}(${range})`;
+
+              data[cellId] = {
+                formula: formula,
+                value: result,
+                explanation: explanation,
+              };
+
+              const cell = $(`[data-id="${cellId}"]`);
+              updateCell(cell, result);
+
+              $("#result-preview").text(explanation);
+            }
+          } catch (error) {
+            console.error("Formula Error:", error);
+            alert("Invalid formula!");
+          }
+        }
+
+        // Update Cell
+        function updateCell(cell, value) {
+          cell.text(value);
+          updateDependentCells(cell.data("id"));
+        }
+
+        // Update Dependent Cells
+        function updateDependentCells(cellId) {
+          Object.entries(data).forEach(([id, cellData]) => {
+            if (cellData.formula && cellData.formula.includes(cellId)) {
+              const formula = cellData.formula;
+              const range = formula.match(/\((.*?)\)/)[1];
+              applyFormula(id, range);
+            }
+          });
+        }
+
+        // Formula Bar Enter Handler
+        formulaBar.on("keypress", function (e) {
+          if (e.key === "Enter") {
+            const range = $(this).val();
+            const selectedCell = $(".cell.selected").first();
+
+            if (selectedCell.length && range) {
+              const cellId = selectedCell.data("id");
+              applyFormula(cellId, range);
+            }
+          }
+        });
+
+        // Styling Functions
+        $("#bold").on("click", function () {
+          $(".cell.selected").each(function () {
+            const cell = $(this);
+            const isBold =
+              cell.css("font-weight") === "700" ||
+              cell.css("font-weight") === "bold";
+            cell.css("font-weight", isBold ? "normal" : "bold");
+          });
+        });
+
+        $("#italic").on("click", function () {
+          $(".cell.selected").each(function () {
+            const cell = $(this);
+            const isItalic = cell.css("font-style") === "italic";
+            cell.css("font-style", isItalic ? "normal" : "italic");
+          });
+        });
+
+        $("#underline").on("click", function () {
+          $(".cell.selected").each(function () {
+            const cell = $(this);
+            const isUnderlined = cell
+              .css("text-decoration")
+              .includes("underline");
+            cell.css("text-decoration", isUnderlined ? "none" : "underline");
+          });
+        });
+
+        // Color Picker
+        $("#color, #bg-color").on("click", function (e) {
+          const isBackground = $(this).attr("id") === "bg-color";
+          colorPicker.css({
+            display: "block",
+            left: e.pageX,
+            top: e.pageY,
+          });
+
+          $("#color-picker-input")
+            .off("change")
+            .on("change", function () {
+              const color = $(this).val();
+              $(".cell.selected").css(
+                isBackground ? "background-color" : "color",
+                color
+              );
+            });
+
+          e.stopPropagation();
+        });
+
+        // Font Size
+        $(".font-size-picker").on("change", function () {
+          const size = $(this).val();
+          $(".cell.selected").css("font-size", size + "px");
+        });
+
+        // Save/Load Functions
+        $("#save").on("click", function () {
+          const saveData = {
+            data: data,
+            styles: {},
+            dimensions: {
+              rows: spreadsheet.find("tbody tr").length,
+              cols: spreadsheet.find("thead th").length - 1,
+            },
+          };
+
+          // Save cell styles
+          $(".cell").each(function () {
+            const cellId = $(this).data("id");
+            saveData.styles[cellId] = {
+              fontWeight: $(this).css("font-weight"),
+              fontStyle: $(this).css("font-style"),
+              textDecoration: $(this).css("text-decoration"),
+              color: $(this).css("color"),
+              backgroundColor: $(this).css("background-color"),
+              fontSize: $(this).css("font-size"),
+            };
+          });
+
+          localStorage.setItem(localStorageKey, JSON.stringify(saveData));
+          alert("Spreadsheet saved successfully!");
+        });
+
+        $("#load").on("click", function () {
+          const savedData = JSON.parse(localStorage.getItem(localStorageKey));
+          if (!savedData) {
+            alert("No saved data found!");
+            return;
+          }
+
+          // Restore data and dimensions
+          data = savedData.data;
+          while (
+            spreadsheet.find("tbody tr").length < savedData.dimensions.rows
+          ) {
+            addRow();
+          }
+          while (
+            spreadsheet.find("thead th").length - 1 <
+            savedData.dimensions.cols
+          ) {
+            addColumn();
+          }
+
+          // Update cell values and styles
+          Object.entries(data).forEach(([cellId, cellData]) => {
+            const cell = $(`[data-id="${cellId}"]`);
+            updateCell(cell, cellData.value);
+
+            // Restore styles
+            const styles = savedData.styles[cellId];
+            if (styles) {
+              cell.css(styles);
+            }
+          });
+        });
+
+        // Add/Remove Rows and Columns
+        function addRow() {
+          const rowNum = spreadsheet.find("tbody tr").length + 1;
+          const colCount = spreadsheet.find("thead th").length - 1;
+          let newRow = `<tr><td>${rowNum}</td>`;
+
+          for (let i = 0; i < colCount; i++) {
+            const colLetter = String.fromCharCode(65 + i);
+            newRow += `<td contenteditable="true" class="cell" data-id="${colLetter}${rowNum}"></td>`;
+          }
+
+          newRow += "</tr>";
+          spreadsheet.find("tbody").append(newRow);
+        }
+
+        function addColumn() {
+          const colIndex = spreadsheet.find("thead th").length - 1;
+          const colLetter = String.fromCharCode(65 + colIndex);
+
+          // Add header
+          spreadsheet
+            .find("thead tr")
+            .append(`<th>${colLetter}<div class="resize-handle"></div></th>`);
+
+          // Add cells
+          spreadsheet.find("tbody tr").each(function (rowIndex) {
+            $(this).append(
+              `<td contenteditable="true" class="cell" data-id="${colLetter}${
+                rowIndex + 1
+              }"></td>`
+            );
+          });
+        }
+
+        $("#add-row").on("click", addRow);
+        $("#add-column").on("click", addColumn);
+
+        $("#remove-row").on("click", function () {
+          const lastRow = spreadsheet.find("tbody tr:last");
+          if (lastRow.length) {
+            lastRow.find(".cell").each(function () {
+              delete data[$(this).data("id")];
+            });
+            lastRow.remove();
+          }
+        });
+
+        $("#remove-column").on("click", function () {
+          const lastColIndex = spreadsheet.find("thead th").length - 1;
+          if (lastColIndex > 1) {
+            spreadsheet.find("tr").each(function () {
+              $(this).find("th:last, td:last").remove();
+            });
+          }
+        });
+
+        // Column Resizing
+        spreadsheet.on("mousedown", ".resize-handle", function (e) {
+          isResizing = true;
+          const th = $(this).parent();
+          startX = e.pageX;
+          startWidth = th.width();
+
+          $(document).on("mousemove", function (e) {
+            if (isResizing) {
+              const width = startWidth + (e.pageX - startX);
+              th.width(width);
+            }
+          });
+
+          $(document).on("mouseup", function () {
+            isResizing = false;
+            $(document).off("mousemove mouseup");
+          });
+
+          e.preventDefault();
+        });
+
+        // Hide context menu and color picker on click outside
+        $(document).on("click", function () {
+          contextMenu.hide();
+          colorPicker.hide();
+        });
+
+        // Initialize with default rows/columns
+        for (let i = 0; i < 8; i++) {
+          addRow();
+        }
+        for (let i = 0; i < 6; i++) {
+          addColumn();
+        }
+      });
+    </script>
+  </body>
+</html>

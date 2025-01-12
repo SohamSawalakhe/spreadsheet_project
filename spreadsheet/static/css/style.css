@@ -1,0 +1,54 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+}
+
+.navbar {
+  margin-bottom: 20px;
+}
+
+.toolbar button {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.spreadsheet-container {
+  overflow-x: auto;
+}
+
+#spreadsheet {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 1px;
+  padding: 5px;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+}
+
+.cell input {
+  width: 100%;
+  border: none;
+  text-align: center;
+  font-size: 14px;
+  padding: 5px;
+}
+
+.cell input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.toolbar {
+  justify-content: flex-start;
+}
+
+#formula-bar {
+  margin-bottom: 10px;
+}
