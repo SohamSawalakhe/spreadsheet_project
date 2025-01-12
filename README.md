@@ -58,71 +58,31 @@ Ensure you have the following installed:
 
 ### Steps to Set Up and Run  
 
-1. **Clone the Repository**  
+1. Clone this repository:
+
    ```bash
    git clone https://github.com/SohamSawalakhe/spreadsheet_project.git
-   cd spreadsheet_project
+   cd spreadsheet
+   ```
 
+2. Install dependencies:
 
-Install Dependencies
-Install all required Python packages from requirements.txt:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-bash
-Copy code
-pip install -r requirements.txt
-Migrate the Database
-Initialize the database for the Django application:
+3. Run the Django server:
 
-bash
-Copy code
-python manage.py migrate
-Run the Development Server
-Start the application server:
+   ```bash
+   python manage.py runserver
+   ```
 
-bash
-Copy code
-python manage.py runserver
-Access the Application
-Open your browser and navigate to:
+4. Access the chatbot in your browser at [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
-arduino
-Copy code
-http://127.0.0.1:8000/
-Usage
-Spreadsheet Interface:
+## License
 
-Use the toolbar for formatting, adding/removing rows and columns, and managing data.
-Click on a cell to enter data or formulas.
-Formulas:
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Enter formulas in the formula bar (e.g., =SUM(A1:A5)).
-Select a function from the dropdown to autofill the formula bar with a template.
-Testing:
-
-Add sample data to test mathematical and data quality functions.
-Save and Load:
-
-Save the current state using the Save button in the toolbar.
-Reload saved data using the Load button.
-Directory Structure
-csharp
-Copy code
-google-sheets-mimic/
-├── manage.py                 # Django management script
-├── app/                      # Main application directory
-│   ├── migrations/           # Database migration files
-│   ├── static/               # Static files (CSS, JS, images)
-│   ├── templates/            # HTML templates
-│   ├── views.py              # View functions
-│   ├── models.py             # Database models
-│   ├── urls.py               # URL routing
-├── requirements.txt          # Python dependencies
-└── README.md                 # Project documentation
-Known Issues and Limitations
-Advanced charts and graphs are not yet implemented.
-Cross-cell referencing may have limited support for edge cases.
-Future Enhancements
-Add data visualization tools like charts and graphs.
 Improve cell dependency handling for complex scenarios.
 License
 This project is licensed under the MIT License.
