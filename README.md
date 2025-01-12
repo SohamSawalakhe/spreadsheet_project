@@ -65,5 +65,5 @@ This project implements a web application mimicking Google Sheets, developed usi
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/google-sheets-mimic.git
+   git clone https://github.com/SohamSawalakhe/spreadsheet_project.git
    ```
